@@ -27,6 +27,17 @@
           "main": "src/snstest.mo",
           "args": "-v --incremental-gc",
           "gzip": true
+        },
+        "snit": {
+          "type": "motoko",
+          "main": "src/Snit.mo",
+          "args": "-v --incremental-gc"
+        },
+        "prodsnit": {
+          "type": "motoko",
+          "gzip": true,
+          "main": "src/Snit.mo",
+          "args": "--incremental-gc --release"
         }
     },
     "defaults": {

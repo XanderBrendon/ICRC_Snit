@@ -4,7 +4,8 @@
       "Bash(wc:*)",
       "Bash(tree:*)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(dfx build:*)"
     ]
   }
 }
