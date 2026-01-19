@@ -1,11 +1,21 @@
 CHANGELOG
 
-v0.0.7
+v1.0.0 - SNIT
+- Forked from PanIndustrial-Org/ICRC_fungible
+- Implemented SNIT non-transferable engagement token
+- Added Dave (partner app) registration and approval system
+- Added principal linking (BagOfSnit) for multi-wallet support
+- Added user level and XP system with mint multipliers
+- Added affinity tracking for user-Dave relationships
+- Added snit_mint and snit_purchase operations
+- Enforced non-transferability via can_transfer hook
+- Removed generic Token.mo, snstest.mo, and example files
+
+v0.0.7 (upstream)
 - update dependencies, compiler, dfx
 
-v0.0.6
-
+v0.0.6 (upstream)
 - implemented ICRC3 to include legacy get_transactions backfill
-- added icrc-103 endpoint for retrieving allowances.
+- added icrc-103 endpoint for retrieving allowances
 - added icrc-106 endpoint for retrieving index canister
-- added sns token to match interface an intitialization as close to rust sns ledger as possible. Use this with Defi vectors test see https://github.com/Neutrinomic/devefi_icrc_ledger
+- added sns token to match interface and initialization as close to rust sns ledger as possible

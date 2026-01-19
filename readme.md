@@ -1,44 +1,74 @@
-# ICRC-1, ICRC-2, and ICRC-3 Fungible Token
+# SNIT - Non-Transferable Engagement Token
 
 ## Overview
-This project is focused on the development and implementation of a fungible token standard, utilizing blockchain or distributed ledger technology. The core of the project is written in Motoko and is compatibility with the DFINITY Internet Computer platform.
+
+SNIT is a non-transferable engagement token for freemium content on the Internet Computer. It implements ICRC-1, ICRC-2, ICRC-3, and ICRC-4 standards while enforcing non-transferability between users. Only approved "Daves" (partner apps) can mint SNIT tokens to users, and users can only burn SNIT through purchases from Daves.
+
+## Key Features
+
+- **Non-Transferable**: User-to-user transfers are blocked. SNIT can only be minted by Daves and burned through purchases.
+- **Dave System**: Partner applications ("Daves") register and get approved to mint tokens. Daves track their own level and stats.
+- **Principal Linking (BagOfSnit)**: Users can link multiple principals together, sharing a unified balance across devices/wallets.
+- **Level/XP System**: Users earn experience through minting and burning, progressing through levels that affect mint multipliers.
+- **Affinity Tracking**: User-Dave relationships are tracked with their own level and experience.
 
 ## Contents
-- `dfx.json`: Configuration file for project settings and canister definitions.
-- `mops.toml`: Dependency management file listing various Motoko libraries and tools.
-- `runners/test_deploy.sh`: Script for testing or deploying the token system.
-- `runners/prod_deploy.sh`: Script for deploying to production token system.
-- `src/Token.mo`: Source code for the token system written in Motoko.
-- `src/examples/Allowlist.mo`: Source code for the a token who is limited to an allow list of users who can send tokens, but anyone can receive them. See the source file for more information.
-- `src/examples/Lotto.mo`: Source code for a token where whenever you burn tokens you have a chance to double your tokens. See the source file for more information.
+
+- `src/Snit.mo` - Main SNIT token implementation
+- `src/SnitTypes.mo` - Type definitions for Dave, Affinity, UserLevel, etc.
+- `runners/test_deploy.sh` - Local testing script
+- `runners/prod_deploy.sh` - Production deployment script
 
 ## Setup and Installation
-1. **Environment Setup**: Ensure you have an environment that supports Motoko programming. This typically involves setting up the [DFINITY Internet Computer SDK](https://internetcomputer.org/docs/current/references/cli-reference/dfx-parent) and [mops tool chain](https://docs.mops.one/quick-start).
-2. **Dependency Installation**: Install the dependencies listed in `mops.toml`. `mops install`.
-3. **Configuration**: Adjust `dfx.json` and `mops.toml` according to your project's specific needs, such as changing canister settings or updating dependency versions.
 
-## Usage
-- **Development**: Modify and enhance `src/Token.mo` as per your requirements. This file contains the logic and structure of the fungible token system.
-- **Testing and Deployment**: Use `runners/test_deploy.sh` for deploying the token system to a test or development environment. This script may need modifications to fit your deployment process.
-- **Production Deployment**: Use `runners/prod_deploy.sh` for deploying the token system to a main net environment. This script will need modifications to fit your deployment process.
+1. **Environment Setup**: Install the [DFINITY Internet Computer SDK](https://internetcomputer.org/docs/current/references/cli-reference/dfx-parent) and [mops](https://docs.mops.one/quick-start).
 
-## Dependencies
-- DFX and Mops
-- Additional dependencies are listed in `mops.toml`. Ensure they are properly installed and configured.
+2. **Install Dependencies**:
+   ```bash
+   mops install
+   ```
 
-## Contribution and Development Guidelines
-- **Coding Standards**: Adhere to established Motoko coding practices. Ensure readability and maintainability of the code.
-- **Testing**: Thoroughly test any new features or changes in a controlled environment before integrating them into the main project.
-- **Documentation**: Update documentation and comments within the code to reflect changes or additions to the project.
+3. **Build**:
+   ```bash
+   dfx build snit
+   ```
 
-## Migration
-- **ICRC-3**: Version v0.0.6 updates ICRC3 with the class plus syntax and initialization.  If you have previouly deployed ICRC-3 you'll need to update your syntax to match the new pattern. You should be able to use your existing icrc3_migration_state variable and it should not require any kind of migration as the data structure is the same.  To upgrade your archive canisters to include the legacy get_transaction functions you will need to implement and run the upgrade helper in the ICRC3 directory(see the icrc3-mo directory in your .mops folder after running mops install).
+4. **Deploy** (local):
+   ```bash
+   dfx deploy snit --argument "(opt record {...})"
+   dfx canister call snit admin_init
+   ```
 
-## Repository
-- [Project Repository](https://github.com/PanIndustrial-Org/ICRC_fungible)
+## Core Operations
+
+### Dave Management
+- `dave_register(name, description)` - Register as a Dave (partner app)
+- `admin_approve_dave(principal)` - Admin approves a pending Dave
+- `admin_suspend_dave(principal)` / `admin_revoke_dave(principal)` - Manage Dave status
+- `snit_dave_profile(principal)` - Query Dave info
+- `snit_all_daves()` / `snit_active_daves()` - List Daves
+
+### SNIT Operations
+- `snit_mint(user)` - Dave mints SNIT to a user
+- `snit_purchase({dave, amount, content_id})` - User burns SNIT for content
+- `snit_balance(user)` - Get user's total balance (including linked principals)
+- `snit_user_profile(user)` - Get user level and stats
+- `snit_affinity(user, dave)` - Get user-dave relationship stats
+
+### Principal Linking
+- `request_link(primary)` - Request to link to a primary principal
+- `confirm_link(secondary)` - Primary confirms a link request
+- `remove_link(secondary)` - Remove a linked principal
+- `snit_linked_principals(user)` - List linked principals
+- `snit_resolve_bag(principal)` - Resolve principal to its BagOfSnit
+
+### ICRC Standards
+Standard ICRC-1, ICRC-2, ICRC-3, and ICRC-4 endpoints are available for queries, but transfers between non-minting accounts will fail.
+
+## Attribution
+
+Forked from [PanIndustrial-Org/ICRC_fungible](https://github.com/PanIndustrial-Org/ICRC_fungible).
 
 ## License
-- MIT License
 
-## Contact
-- **Contributing**: For contributing to this project, please submit a pull request to the repository.
+MIT License

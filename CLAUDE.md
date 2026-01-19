@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an ICRC fungible token implementation for the Internet Computer (IC) platform, written in Motoko. It implements ICRC-1, ICRC-2, ICRC-3, ICRC-4, and ICRC-10 token standards.
+SNIT is a non-transferable engagement token for freemium content on the Internet Computer (IC) platform, written in Motoko. It implements ICRC-1, ICRC-2, ICRC-3, and ICRC-4 token standards while enforcing non-transferability between regular users. Only approved "Daves" (partner apps) can mint tokens, and users can only burn tokens through purchases.
+
+Key concepts:
+- **Dave**: Partner applications that register and get approved to mint SNIT to users
+- **BagOfSnit**: Principal linking system allowing users to share balance across wallets
+- **Affinity**: User-Dave relationship tracking with separate XP/levels
+- **Non-transferability**: `can_transfer` hook blocks user-to-user transfers
 
 ## Build and Deploy Commands
 
@@ -15,18 +21,18 @@ This is an ICRC fungible token implementation for the Internet Computer (IC) pla
 mops install
 
 # Build canisters locally
-dfx build
+dfx build snit
 
 # Build and check for IC mainnet
-dfx build --network ic token --check
+dfx build --network ic prodsnit --check
 
 # Deploy to local replica
-dfx deploy token --argument "(opt record { ... })"
+dfx deploy snit --argument "(opt record { ... })"
 
 # Initialize after deployment (required)
-dfx canister call token admin_init
+dfx canister call snit admin_init
 
-# Run test deployment script (creates test identities and exercises all features)
+# Run test deployment script
 ./runners/test_deploy.sh
 
 # Production deployment (requires configuration)
@@ -37,19 +43,13 @@ dfx canister call token admin_init
 
 ### Canister Definitions (dfx.json)
 
-- **token**: Development build with verbose output (`-v --incremental-gc`)
-- **prodtoken**: Production build with gzip and release optimization (`--incremental-gc --release`)
-- **allowlist**: Example token with sender restrictions
-- **lotto**: Example token with burn lottery mechanics
-- **sns**: SNS-compatible token matching Rust SNS ledger interface
+- **snit**: Development build with verbose output (`-v --incremental-gc`)
+- **prodsnit**: Production build with gzip and release optimization (`--incremental-gc --release`)
 
 ### Core Source Files
 
-- `src/Token.mo` - Main token implementation combining all ICRC standards
-- `src/snstest.mo` - SNS ledger-compatible implementation for DeFi testing
-- `src/sns_types.mo` - SNS-specific type definitions
-- `src/examples/Allowlist.mo` - Demonstrates authorization hook pattern (restricts senders to allowlist)
-- `src/examples/Lotto.mo` - Demonstrates transfer listener pattern (50% chance to double burned tokens)
+- `src/Snit.mo` - Main SNIT token implementation with Dave system and non-transferability
+- `src/SnitTypes.mo` - Type definitions for Dave, Affinity, UserLevel, PurchaseArgs, etc.
 
 ### Initialization Pattern
 
@@ -62,13 +62,23 @@ stable let icrc3_migration_state = ICRC3.initialState()
 stable let icrc4_migration_state = ICRC4.init(...)
 ```
 
-ICRC classes are lazily initialized via private cache variables (`_icrc1`, `_icrc2`, etc.) with getter functions.
+SNIT-specific state includes:
+```motoko
+stable var daves: [(Principal, SnitTypes.Dave)] = []
+stable var user_levels: [(Principal, SnitTypes.UserLevel)] = []
+stable var affinities: [(Principal, [(Principal, SnitTypes.Affinity)])] = []
+stable var bag_of_snit: [(Principal, [Principal])] = []  // Primary -> linked principals
+stable var principal_to_bag: [(Principal, Principal)] = []  // Secondary -> primary
+stable var link_requests: [(Principal, Principal)] = []  // Secondary -> requested primary
+```
 
-### Integration Between Standards
+### Non-Transferability
 
-- ICRC1 environment includes `add_ledger_transaction = ?icrc3().add_record` to automatically log transactions
-- ICRC2 and ICRC4 environments reference `icrc1()` for fee inheritance
-- Certified data store (`CertTree`) provides ICRC3 transaction certification
+The `can_transfer` hook in the ICRC1 environment blocks transfers where:
+- Sender is not the minting account (admin/Dave mint operations)
+- Receiver is not the minting account (burn operations via snit_purchase)
+
+This allows minting and burning while preventing user-to-user transfers.
 
 ## Key Deployment Parameters
 
@@ -82,16 +92,34 @@ Token initialization requires configuration for each standard:
 
 **ICRC4**: max_balances, max_transfers, fee
 
-## Extending the Token
+## SNIT-Specific APIs
 
-To create custom token behavior:
+### Dave Management
+- `dave_register(name, description)` - Register as a Dave
+- `admin_approve_dave(principal)` - Approve pending Dave
+- `admin_suspend_dave(principal)` / `admin_revoke_dave(principal)` - Manage Dave status
 
-1. Override `can_transfer` in ICRC1 environment for transfer authorization (see Allowlist.mo)
-2. Register transfer listeners via `icrc1().register_token_transferred_listener()` for post-transfer actions (see Lotto.mo)
-3. Override `can_approve` in ICRC2 environment for approval authorization
+### Token Operations
+- `snit_mint(user)` - Dave mints calculated amount to user (based on levels/affinity)
+- `snit_purchase({dave, amount, content_id})` - User burns SNIT for content from Dave
+
+### Principal Linking
+- `request_link(primary)` - Request to link caller to a primary principal
+- `confirm_link(secondary)` - Primary confirms link request
+- `remove_link(secondary)` - Remove linked principal
+
+### Query Functions
+- `snit_balance(user)` - Total balance across linked principals
+- `snit_user_profile(user)` - User level and stats
+- `snit_affinity(user, dave)` - User-Dave relationship stats
+- `snit_dave_profile(principal)` / `snit_all_daves()` / `snit_active_daves()` - Dave queries
 
 ## Dependencies
 
 Uses mops packages: `icrc1-mo`, `icrc2-mo`, `icrc3-mo`, `icrc4-mo`, `ic-certification`, `class-plus`
 
 Toolchain requires moc 0.14.14
+
+## Attribution
+
+Forked from [PanIndustrial-Org/ICRC_fungible](https://github.com/PanIndustrial-Org/ICRC_fungible).

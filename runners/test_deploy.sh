@@ -1,44 +1,43 @@
+#!/bin/bash
+# SNIT Test Deployment Script
+# Tests SNIT-specific functionality: Dave registration, minting, purchases, principal linking
+
 set -ex
 
+# Create test identities
+dfx identity new admin --storage-mode=plaintext || true
+dfx identity new dave1 --storage-mode=plaintext || true
 dfx identity new alice --storage-mode=plaintext || true
-
-dfx identity use alice
-
-ALICE_PRINCIPAL=$(dfx identity get-principal)
-
 dfx identity new bob --storage-mode=plaintext || true
 
-dfx identity use bob
-
-BOB_PRINCIPAL=$(dfx identity get-principal)
-
-
-dfx identity new charlie --storage-mode=plaintext || true
-
-dfx identity use charlie
-
-CHARLIE_PRINCIPAL=$(dfx identity get-principal)
-
-dfx identity new icrc_deployer --storage-mode=plaintext || true
-
-dfx identity use icrc_deployer
-
+# Get principals
+dfx identity use admin
 ADMIN_PRINCIPAL=$(dfx identity get-principal)
 
+dfx identity use dave1
+DAVE1_PRINCIPAL=$(dfx identity get-principal)
 
-#Deploy the canister
-dfx deploy token --argument "(opt record {icrc1 = opt record {
-  name = opt \"Test Token\";
-  symbol = opt \"TTT\";
-  logo = opt \"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InJlZCIvPjwvc3ZnPg==\";
+dfx identity use alice
+ALICE_PRINCIPAL=$(dfx identity get-principal)
+
+dfx identity use bob
+BOB_PRINCIPAL=$(dfx identity get-principal)
+
+# Deploy as admin
+dfx identity use admin
+
+dfx deploy snit --argument "(opt record {icrc1 = opt record {
+  name = opt \"SNIT Token\";
+  symbol = opt \"SNIT\";
+  logo = opt \"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0QTkwRDkiLz48L3N2Zz4=\";
   decimals = 8;
-  fee = opt variant { Fixed = 10000};
+  fee = opt variant { Fixed = 0};
   minting_account = opt record{
     owner = principal \"$ADMIN_PRINCIPAL\";
     subaccount = null;
   };
   max_supply = null;
-  min_burn_amount = opt 10000;
+  min_burn_amount = opt 1;
   max_memo = opt 64;
   advanced_settings = null;
   metadata = null;
@@ -47,7 +46,7 @@ dfx deploy token --argument "(opt record {icrc1 = opt record {
   permitted_drift = null;
   max_accounts = opt 100000000;
   settle_to_accounts = opt 99999000;
-}; 
+};
 icrc2 = opt record{
   max_approvals_per_account = opt 10000;
   max_allowance = opt variant { TotalSupply = null};
@@ -55,8 +54,8 @@ icrc2 = opt record{
   advanced_settings = null;
   max_approvals = opt 10000000;
   settle_to_approvals = opt 9990000;
-}; 
-icrc3 = record {
+};
+icrc3 = opt record {
   maxActiveRecords = 3000;
   settleToRecords = 2000;
   maxRecordsInArchiveInstance = 100000000;
@@ -73,206 +72,118 @@ icrc4 = opt record {
   fee = opt variant { ICRC1 = null};
 };})" --mode reinstall
 
-ICRC_CANISTER=$(dfx canister id token)
+SNIT_CANISTER=$(dfx canister id snit)
+echo "SNIT Canister: $SNIT_CANISTER"
 
+# Initialize
+dfx canister call snit admin_init
 
-echo $ICRC_CANISTER
+echo "=== Test 1: ICRC1 Basic Queries ==="
+dfx canister call snit icrc1_name --query
+dfx canister call snit icrc1_symbol --query
+dfx canister call snit icrc1_decimals --query
+dfx canister call snit icrc1_fee --query
 
-# init
-dfx canister call token admin_init
+echo "=== Test 2: Dave Registration Flow ==="
+# Dave1 registers
+dfx identity use dave1
+dfx canister call snit dave_register "(\"TestDave\", opt \"A test Dave partner app\")"
 
-# Get Name
-dfx canister call token icrc1_name  --query 
+# Check pending status
+dfx canister call snit snit_dave_profile "(principal \"$DAVE1_PRINCIPAL\")" --query
 
-# Get Symbol
-dfx canister call token icrc1_symbol  --query 
+# Admin approves
+dfx identity use admin
+dfx canister call snit admin_approve_dave "(principal \"$DAVE1_PRINCIPAL\")"
 
-# Get Decimals
-dfx canister call token icrc1_decimals  --query 
+# Verify active status
+dfx canister call snit snit_dave_profile "(principal \"$DAVE1_PRINCIPAL\")" --query
+dfx canister call snit snit_all_daves --query
+dfx canister call snit snit_active_daves --query
 
-# Get Fee
-dfx canister call token icrc1_fee  --query 
+echo "=== Test 3: SNIT Minting ==="
+# Dave1 mints to Alice
+dfx identity use dave1
+dfx canister call snit snit_mint "(principal \"$ALICE_PRINCIPAL\")"
 
-# Get Metadata
-dfx canister call token icrc1_metadata  --query 
+# Check Alice's balance
+dfx canister call snit snit_balance "(principal \"$ALICE_PRINCIPAL\")" --query
+dfx canister call snit snit_user_profile "(principal \"$ALICE_PRINCIPAL\")" --query
 
-# Set the Logo
-#dfx canister call token admin_update_icrc1 '(vec { variant { UpdateLedgerInfoRequest
+# Check affinity
+dfx canister call snit snit_affinity "(principal \"$ALICE_PRINCIPAL\", principal \"$DAVE1_PRINCIPAL\")" --query
 
-# Mint Tokens
-dfx canister call token icrc1_transfer "(record { 
-  memo = null; 
-  created_at_time=null;
-  from_subaccoint = null;
-  amount = 100000000000;
-  to = record { 
-    owner = principal \"$ALICE_PRINCIPAL\";
+# Mint again to see XP accumulation
+dfx canister call snit snit_mint "(principal \"$ALICE_PRINCIPAL\")"
+dfx canister call snit snit_user_profile "(principal \"$ALICE_PRINCIPAL\")" --query
+
+echo "=== Test 4: SNIT Purchase (Burn) ==="
+dfx identity use alice
+ALICE_BALANCE=$(dfx canister call snit snit_balance "(principal \"$ALICE_PRINCIPAL\")" --query)
+echo "Alice balance before purchase: $ALICE_BALANCE"
+
+# Alice purchases content from Dave1 (burns 50000000 = 0.5 SNIT)
+dfx canister call snit snit_purchase "(record { dave = principal \"$DAVE1_PRINCIPAL\"; amount = 50000000; content_id = null })"
+
+# Check updated balances
+dfx canister call snit snit_balance "(principal \"$ALICE_PRINCIPAL\")" --query
+dfx canister call snit snit_user_profile "(principal \"$ALICE_PRINCIPAL\")" --query
+
+echo "=== Test 5: Principal Linking ==="
+# Bob requests to link to Alice
+dfx identity use bob
+dfx canister call snit request_link "(principal \"$ALICE_PRINCIPAL\")"
+
+# Alice confirms the link
+dfx identity use alice
+dfx canister call snit confirm_link "(principal \"$BOB_PRINCIPAL\")"
+
+# Check linked principals
+dfx canister call snit snit_linked_principals "(principal \"$ALICE_PRINCIPAL\")" --query
+dfx canister call snit snit_resolve_bag "(principal \"$BOB_PRINCIPAL\")" --query
+
+# Now Dave1 mints to Bob - should accumulate in Alice's bag
+dfx identity use dave1
+dfx canister call snit snit_mint "(principal \"$BOB_PRINCIPAL\")"
+
+# Check that Alice's total balance increased
+dfx canister call snit snit_balance "(principal \"$ALICE_PRINCIPAL\")" --query
+
+echo "=== Test 6: Non-Transferability (expect failures) ==="
+dfx identity use alice
+
+# Attempt user-to-user transfer - should fail
+echo "Attempting blocked transfer (should fail)..."
+dfx canister call snit icrc1_transfer "(record {
+  memo = null;
+  created_at_time = null;
+  amount = 10000000;
+  from_subaccount = null;
+  to = record {
+    owner = principal \"$BOB_PRINCIPAL\";
     subaccount = null;
   };
   fee = null
-})"
+})" || echo "Transfer correctly blocked!"
 
-# Get total supply
-dfx canister call token icrc1_total_supply  --query 
-
-# Get minting account
-dfx canister call token icrc1_minting_account  --query
-
-# Get suported standards
-dfx canister call token icrc1_supported_standards  --query
-
-# Get alice balance
-dfx canister call token icrc1_balance_of "(record { 
-    owner = principal \"$ALICE_PRINCIPAL\";
-    subaccount = null;
-  })" --query
-
-dfx identity use alice
-
-# Transfer 500 tokens to bob balance
-dfx canister call token icrc1_transfer "(record { 
-  memo = null; 
-  created_at_time=null;
-  amount = 50000000000;
-  from_subaccoint = null;
-  to = record { 
-    owner = principal \"$BOB_PRINCIPAL\";
-    subaccount = null;
-  };
-  fee = opt 10000;
-})"
-
-# Get alice balance
-dfx canister call token icrc1_balance_of "(record { 
-  owner = principal \"$ALICE_PRINCIPAL\";
-  subaccount = null;
-})" --query
-
-
-# Get bob balance
-dfx canister call token icrc1_balance_of "(record { 
-  owner = principal \"$BOB_PRINCIPAL\";
-  subaccount = null;
-})" --query
-
-
-# bob approves alice to spend
-dfx identity use bob
-
-dfx canister call token icrc2_approve "(record { 
-  memo = null; 
-  created_at_time=null;
-  amount = 25000000000;
+# Attempt approve - should fail
+echo "Attempting blocked approve (should fail)..."
+dfx canister call snit icrc2_approve "(record {
+  memo = null;
+  created_at_time = null;
+  amount = 10000000;
   from_subaccount = null;
   expected_allowance = null;
   expires_at = null;
-  spender = record { 
-    owner = principal \"$ALICE_PRINCIPAL\";
-    subaccount = null;
-  };
-  fee = opt 10000;
-})"
-
-dfx canister call token icrc2_allowance "(record { 
-  spender = record { 
-    owner = principal \"$ALICE_PRINCIPAL\";
-    subaccount = null;
-  };
-  account = record { 
+  spender = record {
     owner = principal \"$BOB_PRINCIPAL\";
     subaccount = null;
   };
-  })" --query
+  fee = null
+})" || echo "Approve correctly blocked!"
 
-# Alice spends Bobs tokens to Charlie
+echo "=== Test 7: ICRC3 Transaction History ==="
+dfx canister call snit icrc3_get_blocks "(vec {record { start = 0; length = 100}})" --query
+dfx canister call snit icrc3_get_archives "(record {from = null})" --query
 
-dfx identity use alice
-
-dfx canister call token icrc2_transfer_from "(record { 
-  memo = null; 
-  created_at_time=null;
-  amount = 12500000000;
-  spender_subaccoint = null;
-  to = record { 
-    owner = principal \"$CHARLIE_PRINCIPAL\";
-    subaccount = null;
-  };
-  from = record { 
-    owner = principal \"$BOB_PRINCIPAL\";
-    subaccount = null;
-  };
-  fee = opt 10000;
-})"
-
-# Get alice balance
-dfx canister call token icrc1_balance_of "(record { 
-  owner = principal \"$ALICE_PRINCIPAL\";
-  subaccount = null;
-})" --query
-
-# Get bob balance
-dfx canister call token icrc1_balance_of "(record { 
-  owner = principal \"$BOB_PRINCIPAL\";
-  subaccount = null;
-})" --query
-
-# Get charlie balance
-dfx canister call token icrc1_balance_of "(record { 
-  owner = principal \"$CHARLIE_PRINCIPAL\";
-  subaccount = null;
-})" --query
-
-
-#Bob Burns tokens
-dfx identity use bob
-
-dfx canister call token icrc1_transfer "(record { 
-  memo = null; 
-  created_at_time=null;
-  amount = 100000000;
-  from_subaccount = null;
-  to = record { 
-    owner = principal \"$ADMIN_PRINCIPAL\";
-    subaccount = null;
-  };
-  fee = opt 10000;
-})"
-
-
-#Revoke the approval
-dfx canister call token icrc2_approve "(record { 
-  memo = null; 
-  created_at_time=null;
-  amount = 0;
-  from_subaccoint = null;
-  expected_allowance = null;
-  expires_at = null;
-  spender = record { 
-    owner = principal \"$ALICE_PRINCIPAL\";
-    subaccount = null;
-  };
-  fee = opt 10000;
-})"
-
-#Check it is removed
-
-dfx canister call token icrc2_allowance "(record { 
-  spender = record { 
-    owner = principal \"$ALICE_PRINCIPAL\";
-    subaccount = null;
-  };
-  account = record { 
-    owner = principal \"$BOB_PRINCIPAL\";
-    subaccount = null;
-  };
-  })" --query
-
-# Get the ledger
-dfx canister call token icrc3_get_blocks "(vec {record { start = 0; length = 1000}})" --query
-
-
-#Get the archive log
-dfx canister call token icrc3_get_archives "(record {from = null})" --query
-
-#Get the tip
-dfx canister call token icrc3_get_tip_certificate  --query
+echo "=== All SNIT Tests Complete ==="

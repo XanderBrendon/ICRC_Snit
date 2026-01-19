@@ -13,19 +13,18 @@ fuzz = "0.2.0"
 matchers = "https://github.com/kritzcreek/motoko-matchers#v1.3.0@3dac8a071b69e4e651b25a7d9683fe831eb7cffd"
 
 [package]
-name = "icrc-fungible"
-version = "0.0.7"
-description = "ICRC1, ICRC2, ICRC3, ICRC4, and ICRC10 fungible token for motoko"
-repository = "https://github.com/PanIndustrial-Org/ICRC_fungible"
+name = "snit"
+version = "1.0.0"
+description = "SNIT - Non-transferable engagement token for freemium content on the Internet Computer"
+repository = "https://github.com/your-org/snit"
 keywords = [
-  "icrc2",
+  "snit",
+  "engagement",
+  "non-transferable",
+  "freemium",
   "icrc1",
-  "icrc3",
-  "icrc4",
-  "icrc10",
-  "fungible",
   "token",
-  "standard"
+  "internet-computer"
 ]
 
 [toolchain]
