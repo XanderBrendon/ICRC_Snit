@@ -300,24 +300,37 @@ dfx canister call snit snit_preview_mint '(principal "USER_PRINCIPAL", principal
 
 ---
 
-## 9. SNIT Purchasing (Burn)
+## 9. SNIT Purchasing (Burn) & Snitdust
 
-### Purchase Content (Burn SNIT)
+### Purchase Content (Burn SNIT, Earn Snitdust)
+
+When a user burns SNIT via `snit_purchase`, they earn Snitdust credits (1:1 ratio) with that Dave. The Dave can then consume dust when granting content.
 
 ```bash
-# Purchase content by burning SNIT
+# Purchase/burn SNIT (earns Snitdust 1:1)
 dfx canister call snit snit_purchase '(record {
   dave = principal "DAVE_PRINCIPAL";
-  amount = 100;
-  content_id = null
+  amount = 100
 })'
+```
 
-# Purchase with content_id
-dfx canister call snit snit_purchase '(record {
-  dave = principal "DAVE_PRINCIPAL";
-  amount = 100;
-  content_id = opt blob "content-123"
-})'
+### Query Snitdust Balance
+
+```bash
+# Query dust balance for any user-dave pair (public)
+dfx canister call snit snit_dust_balance '(principal "USER_PRINCIPAL", principal "DAVE_PRINCIPAL")'
+
+# Dave queries their user's dust balance (caller must be the Dave)
+dfx identity use dave_app
+dfx canister call snit snit_my_dust '(principal "USER_PRINCIPAL")'
+```
+
+### Consume Snitdust (Dave Operation)
+
+```bash
+# Dave consumes dust when granting content (returns remaining dust balance)
+dfx identity use dave_app
+dfx canister call snit snit_consume_dust '(principal "USER_PRINCIPAL", 100)'
 ```
 
 ---
@@ -481,9 +494,9 @@ echo "=== Check Affinity ==="
 dfx canister call snit snit_affinity "(principal \"$USER\", principal \"$DAVE\")"
 
 echo ""
-echo "=== User Purchase ==="
+echo "=== User Purchase (Burns SNIT, Earns Dust) ==="
 dfx identity use test_user
-dfx canister call snit snit_purchase "(record { dave = principal \"$DAVE\"; amount = 50_000_000; content_id = null })"
+dfx canister call snit snit_purchase "(record { dave = principal \"$DAVE\"; amount = 50_000_000 })"
 
 echo ""
 echo "=== Check Updated Balance ==="
@@ -492,6 +505,23 @@ dfx canister call snit snit_balance "(principal \"$USER\")"
 echo ""
 echo "=== Check Updated Profile ==="
 dfx canister call snit snit_user_profile "(principal \"$USER\")"
+
+echo ""
+echo "=== Check Snitdust Balance ==="
+dfx canister call snit snit_dust_balance "(principal \"$USER\", principal \"$DAVE\")"
+
+echo ""
+echo "=== Dave Checks User Dust ==="
+dfx identity use test_dave
+dfx canister call snit snit_my_dust "(principal \"$USER\")"
+
+echo ""
+echo "=== Dave Consumes Dust ==="
+dfx canister call snit snit_consume_dust "(principal \"$USER\", 25_000_000)"
+
+echo ""
+echo "=== Check Remaining Dust ==="
+dfx canister call snit snit_my_dust "(principal \"$USER\")"
 
 echo ""
 echo "=== Test Transfer Blocking ==="

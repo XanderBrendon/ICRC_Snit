@@ -418,6 +418,7 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
             experience = 0;
             total_minted = 0;
             total_burned = 0;
+            dust = 0;
           };
           ignore Map.put(affinities, Map.thash, key, newAff);
           newAff;
@@ -486,6 +487,7 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
         experience = newXp;
         total_minted = current.total_minted;
         total_burned = current.total_burned;
+        dust = current.dust;
       };
       ignore Map.put(affinities, Map.thash, key, updated);
     };
@@ -741,11 +743,15 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
             case (null) {};
           };
 
-          // Update affinity
+          // Update affinity (preserve dust)
           let key = affinity_key(resolved, caller);
           let aff = get_or_create_affinity(resolved, caller);
           let updatedAff : SnitTypes.Affinity = {
-            aff with total_minted = aff.total_minted + amount;
+            level = aff.level;
+            experience = aff.experience;
+            total_minted = aff.total_minted + amount;
+            total_burned = aff.total_burned;
+            dust = aff.dust;
           };
           ignore Map.put(affinities, Map.thash, key, updatedAff);
           add_affinity_xp(resolved, caller, level_config.xp_per_mint);
@@ -791,10 +797,7 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
       let burnResult = await* icrc1().burn_tokens(resolved, {
         from_subaccount = null;
         amount = args.amount;
-        memo = switch(args.content_id) {
-          case (?id) ?id;
-          case (null) ?Text.encodeUtf8("SNIT purchase at " # Principal.toText(args.dave));
-        };
+        memo = ?Text.encodeUtf8("SNIT purchase at " # Principal.toText(args.dave));
         created_at_time = null;
       }, false);
 
@@ -821,11 +824,15 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
             case (null) {};
           };
 
-          // Update affinity
+          // Update affinity and credit dust (1:1 ratio)
           let key = affinity_key(resolved, args.dave);
           let aff = get_or_create_affinity(resolved, args.dave);
           let updatedAff : SnitTypes.Affinity = {
-            aff with total_burned = aff.total_burned + args.amount;
+            level = aff.level;
+            experience = aff.experience;
+            total_minted = aff.total_minted;
+            total_burned = aff.total_burned + args.amount;
+            dust = aff.dust + args.amount;  // Credit dust 1:1 with burned amount
           };
           ignore Map.put(affinities, Map.thash, key, updatedAff);
           add_affinity_xp(resolved, args.dave, level_config.xp_per_burn);
@@ -877,6 +884,63 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
       let resolved = resolve_bag(user);
       let key = affinity_key(resolved, dave);
       Map.get(affinities, Map.thash, key);
+    };
+
+    // Snitdust query functions
+
+    // Query dust balance for any user-dave pair (public)
+    public query func snit_dust_balance(user: Principal, dave: Principal) : async Nat {
+      let resolved = resolve_bag(user);
+      let key = affinity_key(resolved, dave);
+      switch (Map.get(affinities, Map.thash, key)) {
+        case (?aff) aff.dust;
+        case (null) 0;
+      };
+    };
+
+    // Query dust balance where caller is the Dave (convenience for Daves)
+    public query({ caller }) func snit_my_dust(user: Principal) : async Nat {
+      let resolved = resolve_bag(user);
+      let key = affinity_key(resolved, caller);
+      switch (Map.get(affinities, Map.thash, key)) {
+        case (?aff) aff.dust;
+        case (null) 0;
+      };
+    };
+
+    // Dave consumes dust when granting content to user
+    public shared({ caller }) func snit_consume_dust(user: Principal, amount: Nat) : async SnitTypes.SnitResult<Nat> {
+      // Verify caller is an active Dave
+      switch (Map.get(daves, Map.phash, caller)) {
+        case (null) { return #err(#DaveNotFound) };
+        case (?d) {
+          if (d.status != #Active) { return #err(#DaveNotActive) };
+        };
+      };
+
+      // Resolve user's primary principal
+      let resolved = resolve_bag(user);
+      let key = affinity_key(resolved, caller);
+
+      // Get affinity and check dust balance
+      switch (Map.get(affinities, Map.thash, key)) {
+        case (null) { return #err(#InsufficientBalance) };
+        case (?aff) {
+          if (aff.dust < amount) { return #err(#InsufficientBalance) };
+
+          // Deduct dust
+          let updatedAff : SnitTypes.Affinity = {
+            level = aff.level;
+            experience = aff.experience;
+            total_minted = aff.total_minted;
+            total_burned = aff.total_burned;
+            dust = aff.dust - amount;
+          };
+          ignore Map.put(affinities, Map.thash, key, updatedAff);
+
+          return #ok(updatedAff.dust);  // Return remaining balance
+        };
+      };
     };
 
     public query func snit_linked_principals(primary: Principal) : async [Principal] {

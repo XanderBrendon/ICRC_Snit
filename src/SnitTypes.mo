@@ -48,6 +48,7 @@ module SnitTypes {
     experience: Nat;
     total_minted: Nat;
     total_burned: Nat;
+    dust: Nat;  // Snitdust credits - spendable balance from burned SNIT
   };
 
   // Level Configuration
@@ -66,7 +67,6 @@ module SnitTypes {
   public type PurchaseArgs = {
     dave: Principal;
     amount: Nat;
-    content_id: ?Blob;
   };
 
   // SNIT-specific errors
