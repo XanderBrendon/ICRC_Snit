@@ -1,7 +1,6 @@
 {
     "version": 1,
     "canisters": {
-        
         "token": {
           "type": "motoko",
           "main": "src/Token.mo",
