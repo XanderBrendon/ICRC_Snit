@@ -53,10 +53,10 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     // ============================================
 
     let default_icrc1_args : ICRC1.InitArgs = {
-      name = ?"SNIT Token";
+      name = ?"Snitcoin";
       symbol = ?"SNIT";
       logo = ?"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0QTkwRDkiLz48L3N2Zz4=";
-      decimals = 8;
+      decimals = 0;
       fee = ?#Fixed(0); // No fees for SNIT
       minting_account = ?{
         owner = _owner;
