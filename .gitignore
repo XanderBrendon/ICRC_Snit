@@ -3,3 +3,4 @@
 
 # Dependencies
 .mops/
+.claude/settings.local.json
