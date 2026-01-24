@@ -9,7 +9,12 @@
       "Bash(du:*)",
       "Bash(bd ready:*)",
       "Bash(bd stats:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(bd list:*)",
+      "Bash(bd create:*)",
+      "Bash(bd dep add:*)",
+      "Bash(bd blocked)",
+      "Bash(git add:*)"
     ]
   }
 }
