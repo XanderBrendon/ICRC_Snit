@@ -2,26 +2,20 @@
     {
         "match": "**/*",
 
-        // Provides a base set of security headers that will work for most dapps.
-        // Any headers you manually specify will override the headers provided by the policy.
-        // See 'dfx info security-policy' to see the policy and for advice on how to harden the headers.
-        // Once you improved the headers for your dapp, set the security policy to "hardened" to disable the warning.
-        // Options are: "hardened" | "standard" | "disabled".
-        "security_policy": "standard",
+        // Disable the standard security policy so we have full control over headers
+        // This is needed for local development with 127.0.0.1
+        "security_policy": "disabled",
 
-        // Uncomment to disable the warning about using the
-        // standard security policy, if you understand the risk
-        // "disable_security_policy_warning": true,
-
-        // Uncomment to redirect all requests from .raw.icp0.io to .icp0.io
-        // "allow_raw_access": false,
-
-        // Custom headers to allow local development with 127.0.0.1
+        // Custom headers for local development
         "headers": {
-            // Add 127.0.0.1 for local replica access (localhost:* doesn't cover 127.0.0.1)
-            "Content-Security-Policy": "default-src 'self'; script-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* https://icp0.io https://*.icp0.io https://icp-api.io; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests;",
-            // Remove deprecated/unsupported Permissions-Policy features
-            "Permissions-Policy": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+            // CSP with 127.0.0.1 for local replica access
+            "Content-Security-Policy": "default-src 'self'; script-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* https://icp0.io https://*.icp0.io https://icp-api.io; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self';",
+            // Only include supported Permissions-Policy features
+            "Permissions-Policy": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
+            // Basic security headers
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "Referrer-Policy": "strict-origin-when-cross-origin"
         }
     }
 ]
