@@ -8,7 +8,8 @@
       "Bash(dfx build:*)",
       "Bash(du:*)",
       "Bash(bd ready:*)",
-      "Bash(bd stats:*)"
+      "Bash(bd stats:*)",
+      "Bash(ls:*)"
     ]
   }
 }

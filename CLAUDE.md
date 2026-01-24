@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Preferences
+
+- Use `bd` (beads) for task tracking
+
 ## Project Overview
 
 SNIT is a non-transferable engagement token for freemium content on the Internet Computer (IC) platform, written in Motoko. It implements ICRC-1, ICRC-2, ICRC-3, and ICRC-4 token standards while enforcing non-transferability between regular users. Only approved "Daves" (partner apps) can mint tokens, and users can only burn tokens through purchases.
