@@ -6,7 +6,9 @@
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(dfx build:*)",
-      "Bash(du:*)"
+      "Bash(du:*)",
+      "Bash(bd ready:*)",
+      "Bash(bd stats:*)"
     ]
   }
 }
