@@ -15,6 +15,7 @@
         "bagofsnit_frontend": {
           "type": "assets",
           "source": ["bagofsnit/src/bagofsnit_frontend/dist"],
+          "build": ["npm --prefix bagofsnit/src/bagofsnit_frontend run build"],
           "dependencies": ["snit"]
         },
         "internet_identity": {

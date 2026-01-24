@@ -4,6 +4,9 @@
       "source": [
         "src/bagofsnit_frontend/dist"
       ],
+      "build": [
+        "npm --prefix src/bagofsnit_frontend run build"
+      ],
       "type": "assets",
       "workspace": "bagofsnit_frontend"
     }
