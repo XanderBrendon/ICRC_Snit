@@ -809,10 +809,14 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
 
       // Burn tokens (must be called from the resolved principal)
       // If caller is linked, we need to burn from the primary
+      let memoText = switch(args.content_id) {
+        case (?cid) { "SNIT purchase at " # Principal.toText(args.dave) # " for " # cid };
+        case (null) { "SNIT purchase at " # Principal.toText(args.dave) };
+      };
       let burnResult = await* icrc1().burn_tokens(resolved, {
         from_subaccount = null;
         amount = args.amount;
-        memo = ?Text.encodeUtf8("SNIT purchase at " # Principal.toText(args.dave));
+        memo = ?Text.encodeUtf8(memoText);
         created_at_time = null;
       }, false);
 

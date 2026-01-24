@@ -67,6 +67,7 @@ module SnitTypes {
   public type PurchaseArgs = {
     dave: Principal;
     amount: Nat;
+    content_id: ?Text;  // Optional content identifier for tracking purchases
   };
 
   // SNIT-specific errors
