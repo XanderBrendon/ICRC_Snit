@@ -1,13 +1,6 @@
 {
   "canisters": {
-    "bagofsnit_backend": {
-      "main": "src/bagofsnit_backend/main.mo",
-      "type": "motoko"
-    },
     "bagofsnit_frontend": {
-      "dependencies": [
-        "bagofsnit_backend"
-      ],
       "source": [
         "src/bagofsnit_frontend/dist"
       ],
@@ -21,6 +14,5 @@
       "packtool": ""
     }
   },
-  "output_env_file": ".env",
   "version": 1
 }

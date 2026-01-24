@@ -150,6 +150,7 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     let ct = CertTree.Ops(cert_store);
 
     stable var owner = _owner;
+    stable let admins = Set.new<Principal>();  // Delegated admins
     stable var icrc3_migration_state_new = icrc3_migration_state;
 
     // ============================================
@@ -375,6 +376,11 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     // Helper Functions
     // ============================================
 
+    // Check if caller is an admin (owner or delegated admin)
+    private func is_admin(caller: Principal) : Bool {
+      caller == owner or Set.has(admins, Set.phash, caller);
+    };
+
     // Resolve any principal to its BagOfSnit primary principal
     private func resolve_bag(principal: Principal) : Principal {
       switch (Map.get(linked_principals, Map.phash, principal)) {
@@ -533,7 +539,7 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     };
 
     public shared({ caller }) func admin_approve_dave(principal: Principal) : async SnitTypes.SnitResult<()> {
-      if (caller != owner) { return #err(#NotAuthorized) };
+      if (not is_admin(caller)) { return #err(#NotAuthorized) };
 
       switch (Map.get(daves, Map.phash, principal)) {
         case (null) { #err(#DaveNotFound) };
@@ -551,7 +557,7 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     };
 
     public shared({ caller }) func admin_suspend_dave(principal: Principal) : async SnitTypes.SnitResult<()> {
-      if (caller != owner) { return #err(#NotAuthorized) };
+      if (not is_admin(caller)) { return #err(#NotAuthorized) };
 
       switch (Map.get(daves, Map.phash, principal)) {
         case (null) { #err(#DaveNotFound) };
@@ -564,7 +570,7 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     };
 
     public shared({ caller }) func admin_revoke_dave(principal: Principal) : async SnitTypes.SnitResult<()> {
-      if (caller != owner) { return #err(#NotAuthorized) };
+      if (not is_admin(caller)) { return #err(#NotAuthorized) };
 
       switch (Map.get(daves, Map.phash, principal)) {
         case (null) { #err(#DaveNotFound) };
@@ -1053,12 +1059,12 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     // ============================================
 
     public shared({ caller }) func admin_update_level_config(config: SnitTypes.LevelConfig) : async () {
-      if (caller != owner) { D.trap("Unauthorized") };
+      if (not is_admin(caller)) { D.trap("Unauthorized") };
       level_config := config;
     };
 
     public shared({ caller }) func admin_grant_xp(user: Principal, xp: Nat) : async () {
-      if (caller != owner) { D.trap("Unauthorized") };
+      if (not is_admin(caller)) { D.trap("Unauthorized") };
       add_user_xp(user, xp);
     };
 
@@ -1066,6 +1072,30 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
       if (caller != owner) { D.trap("Unauthorized") };
       owner := new_owner;
       true;
+    };
+
+    // Add a delegated admin (owner only)
+    public shared({ caller }) func admin_add_admin(principal: Principal) : async SnitTypes.SnitResult<()> {
+      if (caller != owner) { return #err(#NotAuthorized) };
+      Set.add(admins, Set.phash, principal);
+      #ok(());
+    };
+
+    // Remove a delegated admin (owner only)
+    public shared({ caller }) func admin_remove_admin(principal: Principal) : async SnitTypes.SnitResult<()> {
+      if (caller != owner) { return #err(#NotAuthorized) };
+      Set.delete(admins, Set.phash, principal);
+      #ok(());
+    };
+
+    // List all admins (includes owner)
+    public query func admin_list_admins() : async { owner: Principal; admins: [Principal] } {
+      { owner = owner; admins = Iter.toArray(Set.keys(admins)) };
+    };
+
+    // Check if a principal is an admin
+    public query func admin_is_admin(principal: Principal) : async Bool {
+      principal == owner or Set.has(admins, Set.phash, principal);
     };
 
     // ============================================

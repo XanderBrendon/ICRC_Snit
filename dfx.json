@@ -11,6 +11,15 @@
           "gzip": true,
           "main": "src/Snit.mo",
           "args": "--incremental-gc --release"
+        },
+        "bagofsnit_frontend": {
+          "type": "assets",
+          "source": ["bagofsnit/src/bagofsnit_frontend/dist"],
+          "dependencies": ["snit"]
+        },
+        "internet_identity": {
+          "type": "pull",
+          "id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
         }
     },
     "defaults": {
@@ -21,5 +30,6 @@
         "replica": {
           "subnet_type": "system"
       }
-    }
+    },
+    "output_env_file": ".env"
 }

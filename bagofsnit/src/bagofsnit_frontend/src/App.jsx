@@ -1,30 +1,25 @@
-import { useState } from 'react';
-import { bagofsnit_backend } from 'declarations/bagofsnit_backend';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ActorProvider } from './contexts/ActorContext';
+import { Layout } from './components/layout';
+import { HomePage, UserPage, DavePage, AdminPage } from './pages';
 
 function App() {
-  const [greeting, setGreeting] = useState('');
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    const name = event.target.elements.name.value;
-    bagofsnit_backend.greet(name).then((greeting) => {
-      setGreeting(greeting);
-    });
-    return false;
-  }
-
   return (
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
-      </form>
-      <section id="greeting">{greeting}</section>
-    </main>
+    <BrowserRouter>
+      <AuthProvider>
+        <ActorProvider>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<HomePage />} />
+              <Route path="user" element={<UserPage />} />
+              <Route path="dave" element={<DavePage />} />
+              <Route path="admin" element={<AdminPage />} />
+            </Route>
+          </Routes>
+        </ActorProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

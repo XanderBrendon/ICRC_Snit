@@ -4,7 +4,8 @@ import { defineConfig } from 'vite';
 import environment from 'vite-plugin-environment';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '../../.env' });
+// Load .env from root project directory
+dotenv.config({ path: '../../../.env' });
 
 export default defineConfig({
   build: {
@@ -33,9 +34,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        // Point to root project declarations
         find: "declarations",
         replacement: fileURLToPath(
-          new URL("../declarations", import.meta.url)
+          new URL("../../../src/declarations", import.meta.url)
         ),
       },
     ],
