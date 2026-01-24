@@ -191,7 +191,10 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     // ICRC1 Class Setup
     // ============================================
 
-    let #v0_1_0(#data(icrc1_state_current)) = icrc1_migration_state;
+    let icrc1_state_current = switch(icrc1_migration_state) {
+      case (#v0_1_0(#data(state))) state;
+      case (_) D.trap("Unexpected ICRC1 migration state");
+    };
     private var _icrc1 : ?ICRC1.ICRC1 = null;
 
     private func _get_icrc1_state() : ICRC1.CurrentState {
@@ -223,7 +226,10 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     // ICRC2 Class Setup
     // ============================================
 
-    let #v0_1_0(#data(icrc2_state_current)) = icrc2_migration_state;
+    let icrc2_state_current = switch(icrc2_migration_state) {
+      case (#v0_1_0(#data(state))) state;
+      case (_) D.trap("Unexpected ICRC2 migration state");
+    };
     private var _icrc2 : ?ICRC2.ICRC2 = null;
 
     private func _get_icrc2_state() : ICRC2.CurrentState {
@@ -249,7 +255,10 @@ shared ({ caller = _owner }) actor class Snit(args: ?{
     // ICRC4 Class Setup
     // ============================================
 
-    let #v0_1_0(#data(icrc4_state_current)) = icrc4_migration_state;
+    let icrc4_state_current = switch(icrc4_migration_state) {
+      case (#v0_1_0(#data(state))) state;
+      case (_) D.trap("Unexpected ICRC4 migration state");
+    };
     private var _icrc4 : ?ICRC4.ICRC4 = null;
 
     private func _get_icrc4_state() : ICRC4.CurrentState {
