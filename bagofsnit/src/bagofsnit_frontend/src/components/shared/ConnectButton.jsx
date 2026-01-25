@@ -1,4 +1,5 @@
 import { useAuth } from '../../hooks';
+import { PrincipalDisplay } from './PrincipalDisplay';
 
 export function ConnectButton() {
   const { isAuthenticated, isLoading, principal, login, logout } = useAuth();
@@ -10,9 +11,7 @@ export function ConnectButton() {
   if (isAuthenticated) {
     return (
       <div className="connect-info">
-        <span className="principal" title={principal?.toString()}>
-          {principal?.toString().slice(0, 8)}...{principal?.toString().slice(-4)}
-        </span>
+        <PrincipalDisplay principal={principal} />
         <button onClick={logout} className="btn btn-secondary">
           Disconnect
         </button>
