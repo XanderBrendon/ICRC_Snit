@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
     return new Promise((resolve, reject) => {
       authClient.login({
         identityProvider: II_URL,
-        maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000), // 7 days in nanoseconds
+        maxTimeToLive: BigInt(30 * 24 * 60 * 60 * 1000 * 1000 * 1000), // 30 days in nanoseconds (max allowed)
         onSuccess: async () => {
           const identity = authClient.getIdentity();
           const principal = identity.getPrincipal();
