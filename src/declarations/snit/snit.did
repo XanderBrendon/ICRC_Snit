@@ -251,6 +251,7 @@ type Snit =
 type PurchaseArgs = 
  record {
    amount: nat;
+   content_id: opt text;
    dave: principal;
  };
 type Mint = 

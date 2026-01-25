@@ -189,7 +189,11 @@ export interface Mint {
   'created_at_time' : [] | [Timestamp],
   'amount' : Balance,
 }
-export interface PurchaseArgs { 'dave' : Principal, 'amount' : bigint }
+export interface PurchaseArgs {
+  'dave' : Principal,
+  'content_id' : [] | [string],
+  'amount' : bigint,
+}
 export interface Snit {
   'admin_add_admin' : ActorMethod<[Principal], SnitResult_1>,
   'admin_approve_dave' : ActorMethod<[Principal], SnitResult_1>,

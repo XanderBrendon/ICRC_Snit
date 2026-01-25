@@ -349,6 +349,7 @@ export const idlFactory = ({ IDL }) => {
   const SnitResult = IDL.Variant({ 'ok' : IDL.Nat, 'err' : SnitError });
   const PurchaseArgs = IDL.Record({
     'dave' : IDL.Principal,
+    'content_id' : IDL.Opt(IDL.Text),
     'amount' : IDL.Nat,
   });
   const UserLevel = IDL.Record({
