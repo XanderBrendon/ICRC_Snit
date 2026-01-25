@@ -1,7 +1,5 @@
 # Agent Instructions
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
-
 ## Project Overview
 
 **SNIT** is a non-transferable engagement token for freemium content on the Internet Computer (IC). Users earn SNIT from partner apps ("Daves") and burn it to purchase content.
@@ -21,36 +19,5 @@ This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get sta
 
 ### Build Commands
 ```bash
-mops install              # Install dependencies
-dfx build snit           # Build locally
-dfx deploy snit          # Deploy to local replica
-dfx canister call snit admin_init  # Initialize after deploy
+dfx build           # Build locally
 ```
-
-## Quick Reference
-
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
-```
-
-## Session Completion (Preparing for Commit)
-
-**When ending a work session**, prepare everything for the user to commit:
-
-**WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **Summarize changes** - Tell the user what files were modified and what to commit
-5. **Hand off** - Provide context for next session
-
-**IMPORTANT:**
-- Do NOT run `git commit`, `git push`, or `bd sync` - the user will handle version control
-- DO stage files with `git add` if helpful, but leave the commit to the user
-- Provide a suggested commit message if substantial changes were made
-
